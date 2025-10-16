@@ -31,6 +31,9 @@ packages = ["commonforms"]
 [tool.setuptools.package-data]
 commonforms = ["models/*.pt", "models/*.onnx"]
 
+[tool.setuptools.packages.find]
+exclude = ["dataset*"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
