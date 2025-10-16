@@ -102,6 +102,7 @@ def process_pdf(pdf_path, output_dir):
 
             total_widgets += len(widgets)
 
+        document.document.close()
         return f"Processed {pdf_name}: {num_pages} pages, {total_widgets} widgets"
 
     except Exception as e:
