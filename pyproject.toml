@@ -7,7 +7,7 @@ name = "commonforms"
 version = "0.1.5"
 description = "Automatically convert a PDF into a fillable form"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 urls = { Homepage = "https://github.com/jbarrow/commonforms" }
 dependencies = [
     "cryptography>=3.1",
