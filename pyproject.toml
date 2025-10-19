@@ -11,7 +11,7 @@ requires-python = ">=3.9"
 urls = { Homepage = "https://github.com/jbarrow/commonforms" }
 dependencies = [
     "cryptography>=3.1",
-    "formalpdf==0.1.5",
+    "formalpdf==0.1.6",
     "huggingface-hub>=0.35.3",
     "onnx>=1.19.1",
     "onnxruntime>=1.23.1",
