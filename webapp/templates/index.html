@@ -1,0 +1,54 @@
+﻿<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <title>CommonForms Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      .container { max-width: 640px; margin: 0 auto; }
+      .status { margin-top: 1rem; color: #555; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CommonForms Web</h1>
+      <p>Carica un file PDF. Il sistema applicherà i campi compilabili.</p>
+      <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="application/pdf,.pdf" required />
+        <button id="uploadBtn" type="submit">Carica ed elabora</button>
+      </form>
+      <div id="progress" class="status" style="display:none;">In elaborazione...</div>
+      {% if download_id %}
+      <div class="status">
+        <p>Elaborazione completata.</p>
+        {% if download_size %}
+        <p>Dimensione file: {{ download_size }} MB</p>
+        {% endif %}
+        <form action="/download/{{ download_id }}" method="get">
+          <fieldset>
+            <legend>Opzione di compressione</legend>
+            <label><input type="radio" name="mode" value="none" checked> Nessuna</label>
+            <label><input type="radio" name="mode" value="zip"> ZIP</label>
+            <label><input type="radio" name="mode" value="pdf"> Riduzione PDF</label>
+          </fieldset>
+          <button type="submit">Scarica</button>
+        </form>
+      </div>
+      {% elif processing %}
+      <div class="status">In elaborazione...</div>
+      {% endif %}
+    </div>
+    <script>
+      const form = document.getElementById('uploadForm');
+      const btn = document.getElementById('uploadBtn');
+      const progress = document.getElementById('progress');
+      if (form) {
+        form.addEventListener('submit', function () {
+          if (btn) btn.disabled = true;
+          if (progress) progress.style.display = 'block';
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <title>CommonForms Web</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      .container { max-width: 640px; margin: 0 auto; }
+      .status { margin-top: 1rem; color: #555; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>CommonForms Web</h1>
+      <p>Carica un file PDF. Il sistema applicherà i campi compilabili.</p>
+      <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="application/pdf,.pdf" required />
+        <button type="submit">Carica ed elabora</button>
+      </form>
+      {% if download_id %}
+      <div class="status">
+        <p>Elaborazione completata. <a href="/download/{{ download_id }}">Scarica il PDF</a></p>
+      </div>
+      {% elif processing %}
+      <div class="status">In elaborazione...</div>
+      {% endif %}
+    </div>
+  </body>
+</html>
+

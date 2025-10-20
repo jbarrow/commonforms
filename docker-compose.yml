@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: webapp/Dockerfile
+    image: ghcr.io/your-org/commonforms-web:latest
+    environment:
+      - PORT=8080
+      - MAX_UPLOAD_MB=25
+      - LANGUAGE=it
+      - HF_HOME=/cache/hf
+      - CLEANUP_MINUTES=10
+    ports:
+      - "8080:8080"
+    volumes:
+      - hf-cache:/cache/hf
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
+

@@ -1,0 +1,27 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+
+# VCS
+.git/
+.gitignore
+
+# Environments
+.env
+.venv/
+
+# Build artifacts
+build/
+dist/
+*.log
+
+# Project
+specs/
+dataset/
+assets/
