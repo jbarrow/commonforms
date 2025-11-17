@@ -58,6 +58,7 @@ def main():
 
     args = parser.parse_args()
 
+    print(f"**{args.confidence=}")
     prepare_form(
         args.input,
         args.output,

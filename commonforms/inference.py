@@ -2,6 +2,7 @@ from __future__ import annotations
 from ultralytics import YOLO
 from pathlib import Path
 from huggingface_hub import hf_hub_download
+from rfdetr import RFDETRNano, RFDETRBase, RFDETRMedium, RFDETRLarge
 
 from commonforms.utils import BoundingBox, Page, Widget
 from commonforms.form_creator import PyPdfFormCreator
@@ -9,6 +10,7 @@ from commonforms.exceptions import EncryptedPdfError
 
 import formalpdf
 import pypdfium2
+import PIL
 
 
 # our mapping from (model_name, fast) to (repo_id, filename) for the huggingface hub
@@ -17,7 +19,73 @@ models = {
     ("FFDNET-S", False): ("jbarrow/FFDNet-S", "FFDNet-S.pt"),
     ("FFDNET-L", True): ("jbarrow/FFDNet-L-cpu", "FFDNet-L.onnx"),
     ("FFDNET-L", False): ("jbarrow/FFDNet-L", "FFDNet-L.pt"),
+    ("FFDetr-Nano", False): ("./models/FFDetr-Nano", "checkpoint_best_ema.pth")
 }
+
+
+
+def batch(lst: list, n: int = 8):
+    l = len(lst)
+    for ndx in range(0, l, n):
+        yield lst[ndx:min(ndx + n, l)]
+
+
+
+class FFDetrDetector:
+    def __init__(
+        self, model_or_path: str, device: int | str = "cpu"
+    ) -> None:
+        self.device = device
+        self.model = RFDETRMedium(pretrain_weights=model_or_path, resolution=224*5, num_classes=2)
+
+        self.id_to_cls = {0: "TextBox", 1: "ChoiceButton"}
+
+    def resize(
+        self,
+        image: PIL.Image.Image,
+        size: tuple[int, int] | int,
+    ) -> PIL.Image.Image:
+        if isinstance(size, int):
+            size = (size, size)
+
+        return image.resize(size, PIL.Image.Resampling.LANCZOS)
+
+    def extract_widgets(
+        self, pages: list[Page], confidence: float = 0.2, image_size: int = 1120
+    ) -> dict[int, list[Widget]]:
+        image_size = 1024
+        results = []
+        for b in batch([p.image for p in pages], n=1):
+            results += [self.model.predict(b, threshold=confidence)]
+
+        widgets = {}
+
+        if len(pages) == 1:
+            results = [results]
+
+        for page_ix, detections in enumerate(results):
+            print(f"{page_ix}: {len(detections)} fields detected")
+            detections = detections.with_nms(threshold=0.1, class_agnostic=True)
+            print(f"{len(detections)} after nms")
+            widgets[page_ix] = []
+
+            for class_id, box in zip(detections.class_id, detections.xyxy):
+                x0, x1 = box[[0, 2]] / pages[page_ix].image.width
+                y0, y1 = box[[1, 3]] / pages[page_ix].image.height
+
+                widget_type = self.id_to_cls[class_id]
+
+                widgets[page_ix].append(
+                    Widget(
+                        widget_type=widget_type,
+                        bounding_box=BoundingBox(x0=x0, y0=y0, x1=x1, y1=y1),
+                        page=page_ix,
+                    )
+                )
+
+            widgets[page_ix] = sort_widgets(widgets[page_ix])
+
+        return widgets
 
 
 class FFDNetDetector:
@@ -148,7 +216,8 @@ def render_pdf(pdf_path: str) -> list[Page]:
     doc = formalpdf.open(pdf_path)
     try:
         for page in doc:
-            image = page.render()
+            image = page.render(dpi=144)
+            print(image.width, image.height)
             pages.append(Page(image=image, width=image.width, height=image.height))
         return pages
     finally:
@@ -168,7 +237,8 @@ def prepare_form(
     fast: bool = False,
     multiline: bool = False,
 ):
-    detector = FFDNetDetector(model_or_path, device=device, fast=fast)
+    # detector = FFDNetDetector(model_or_path, device=device, fast=fast)
+    detector = FFDetrDetector("./models/FFDetr-Medium/checkpoint_best_ema.pth")
 
     try:
         pages = render_pdf(input_path)
