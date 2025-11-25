@@ -10,16 +10,22 @@ from commonforms.exceptions import EncryptedPdfError
 
 import formalpdf
 import pypdfium2
+import logging
 import PIL
 
 
-# our mapping from (model_name, fast) to (repo_id, filename) for the huggingface hub
+logging.basicConfig(level=logging.INFO)
+
+
+# our mapping from (model_name_upper, fast) to (repo_id, filename) for the huggingface hub.
+# keeping it simple and declarative like this becuase it's not like we're adding a bunch
+# of models.
 models = {
     ("FFDNET-S", True): ("jbarrow/FFDNet-S-cpu", "FFDNet-S.onnx"),
     ("FFDNET-S", False): ("jbarrow/FFDNet-S", "FFDNet-S.pt"),
     ("FFDNET-L", True): ("jbarrow/FFDNet-L-cpu", "FFDNet-L.onnx"),
     ("FFDNET-L", False): ("jbarrow/FFDNet-L", "FFDNet-L.pt"),
-    ("FFDetr-Nano", False): ("./models/FFDetr-Nano", "checkpoint_best_ema.pth")
+    ("FFDETR", False): ("jbarrow/FFDetr", "FFDetr.pth")
 }
 
 
@@ -30,15 +36,25 @@ def batch(lst: list, n: int = 8):
         yield lst[ndx:min(ndx + n, l)]
 
 
-
 class FFDetrDetector:
     def __init__(
         self, model_or_path: str, device: int | str = "cpu"
     ) -> None:
         self.device = device
-        self.model = RFDETRMedium(pretrain_weights=model_or_path, resolution=224*5, num_classes=2)
+        self.model = RFDETRMedium(pretrain_weights=self.get_model_path(model_or_path))
 
-        self.id_to_cls = {0: "TextBox", 1: "ChoiceButton"}
+        self.id_to_cls = {0: "TextBox", 1: "ChoiceButton", 2: "Signature"}
+
+    def get_model_path(self, model_or_path: str) -> str:
+        model_upper = model_or_path.upper()
+        if model_upper in ["FFDETR"]:
+            # download the model, will just use the cached version if it already exists
+            repo_id, filename = models[(model_upper, False)] 
+            model_path = hf_hub_download(repo_id=repo_id, filename=filename) 
+        else:
+            model_path = model_or_path
+
+        return model_path
 
     def resize(
         self,
@@ -51,22 +67,26 @@ class FFDetrDetector:
         return image.resize(size, PIL.Image.Resampling.LANCZOS)
 
     def extract_widgets(
-        self, pages: list[Page], confidence: float = 0.2, image_size: int = 1120
+        self,
+        pages: list[Page],
+        confidence: float = 0.4,
+        image_size: int = 1120,
+        batch_size: int = 3,
     ) -> dict[int, list[Widget]]:
         image_size = 1024
         results = []
-        for b in batch([p.image for p in pages], n=1):
-            results += [self.model.predict(b, threshold=confidence)]
+        for b in batch([p.image for p in pages], n=batch_size):
+            predictions = self.model.predict(b, threshold=confidence)
+            if len(pages) == 1 or batch_size == 1:
+                predictions = [predictions]
+            results.extend(predictions)
 
         widgets = {}
 
-        if len(pages) == 1:
-            results = [results]
-
         for page_ix, detections in enumerate(results):
-            print(f"{page_ix}: {len(detections)} fields detected")
+            logging.info(f"  Page {page_ix}: {len(detections)} fields detected")
             detections = detections.with_nms(threshold=0.1, class_agnostic=True)
-            print(f"{len(detections)} after nms")
+            logging.info(f"\t\t{len(detections)} after nms")
             widgets[page_ix] = []
 
             for class_id, box in zip(detections.class_id, detections.xyxy):
@@ -217,7 +237,6 @@ def render_pdf(pdf_path: str) -> list[Page]:
     try:
         for page in doc:
             image = page.render(dpi=144)
-            print(image.width, image.height)
             pages.append(Page(image=image, width=image.width, height=image.height))
         return pages
     finally:
@@ -238,7 +257,7 @@ def prepare_form(
     multiline: bool = False,
 ):
     # detector = FFDNetDetector(model_or_path, device=device, fast=fast)
-    detector = FFDetrDetector("./models/FFDetr-Medium/checkpoint_best_ema.pth")
+    detector = FFDetrDetector("FFDetr")
 
     try:
         pages = render_pdf(input_path)
