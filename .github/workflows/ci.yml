@@ -34,7 +34,7 @@ jobs:
             .venv
           key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.python-version }}-
+            uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
 
       - name: Install (uv)
         run: |
