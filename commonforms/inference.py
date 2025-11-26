@@ -25,21 +25,18 @@ models = {
     ("FFDNET-S", False): ("jbarrow/FFDNet-S", "FFDNet-S.pt"),
     ("FFDNET-L", True): ("jbarrow/FFDNet-L-cpu", "FFDNet-L.onnx"),
     ("FFDNET-L", False): ("jbarrow/FFDNet-L", "FFDNet-L.pt"),
-    ("FFDETR", False): ("jbarrow/FFDetr", "FFDetr.pth")
+    ("FFDETR", False): ("jbarrow/FFDetr", "FFDetr.pth"),
 }
-
 
 
 def batch(lst: list, n: int = 8):
     l = len(lst)
     for ndx in range(0, l, n):
-        yield lst[ndx:min(ndx + n, l)]
+        yield lst[ndx : min(ndx + n, l)]
 
 
 class FFDetrDetector:
-    def __init__(
-        self, model_or_path: str, device: int | str = "cpu"
-    ) -> None:
+    def __init__(self, model_or_path: str, device: int | str = "cpu") -> None:
         self.device = device
         self.model = RFDETRMedium(pretrain_weights=self.get_model_path(model_or_path))
 
@@ -49,8 +46,8 @@ class FFDetrDetector:
         model_upper = model_or_path.upper()
         if model_upper in ["FFDETR"]:
             # download the model, will just use the cached version if it already exists
-            repo_id, filename = models[(model_upper, False)] 
-            model_path = hf_hub_download(repo_id=repo_id, filename=filename) 
+            repo_id, filename = models[(model_upper, False)]
+            model_path = hf_hub_download(repo_id=repo_id, filename=filename)
         else:
             model_path = model_or_path
 
@@ -75,7 +72,7 @@ class FFDetrDetector:
     ) -> dict[int, list[Widget]]:
         image_size = 1024
         results = []
-        for b in batch([p.image for p in pages], n=batch_size):
+        for b in batch([self.resize(p.image, image_size) for p in pages], n=batch_size):
             predictions = self.model.predict(b, threshold=confidence)
             if len(pages) == 1 or batch_size == 1:
                 predictions = [predictions]
@@ -131,8 +128,8 @@ class FFDNetDetector:
         model_upper = model_or_path.upper()
         if model_upper in ["FFDNET-S", "FFDNET-L"]:
             # download the model, will just use the cached version if it already exists
-            repo_id, filename = models[(model_upper, fast)] 
-            model_path = hf_hub_download(repo_id=repo_id, filename=filename) 
+            repo_id, filename = models[(model_upper, fast)]
+            model_path = hf_hub_download(repo_id=repo_id, filename=filename)
         else:
             model_path = model_or_path
 
@@ -247,17 +244,20 @@ def prepare_form(
     input_path: str | Path,
     output_path: str | Path,
     *,
-    model_or_path: str = "FFDNet-L",
+    model_or_path: str = "FFDetr",
     keep_existing_fields: bool = False,
     use_signature_fields: bool = False,
     device: int | str = "cpu",
-    image_size: int = 1600,
-    confidence: float = 0.3,
+    image_size: int = 1024,
+    confidence: float = 0.4,
     fast: bool = False,
     multiline: bool = False,
+    batch_size: int = 4,
 ):
-    # detector = FFDNetDetector(model_or_path, device=device, fast=fast)
-    detector = FFDetrDetector("FFDetr")
+    if "FFDNET" in model_or_path.upper():
+        detector = FFDNetDetector(model_or_path, device=device, fast=fast)
+    else:
+        detector = FFDetrDetector(model_or_path)
 
     try:
         pages = render_pdf(input_path)
@@ -277,7 +277,9 @@ def prepare_form(
             name = f"{widget.widget_type.lower()}_{widget.page}_{i}"
 
             if widget.widget_type == "TextBox":
-                writer.add_text_box(name, page_ix, widget.bounding_box, multiline=multiline)
+                writer.add_text_box(
+                    name, page_ix, widget.bounding_box, multiline=multiline
+                )
             elif widget.widget_type == "ChoiceButton":
                 writer.add_checkbox(name, page_ix, widget.bounding_box)
             elif widget.widget_type == "Signature":
