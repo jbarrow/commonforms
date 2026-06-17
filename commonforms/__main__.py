@@ -48,7 +48,7 @@ def main():
     parser.add_argument(
         "--fast",
         action="store_true",
-        help="If running on a CPU, you can use --fast to get a 50% speedup with a small accuracy penalty",
+        help="If running on a CPU, you can use --fast to get a 50%% speedup with a small accuracy penalty",
     )
     parser.add_argument(
         "--multiline",
@@ -58,7 +58,6 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"**{args.confidence=}")
     prepare_form(
         args.input,
         args.output,
