@@ -14,11 +14,30 @@ This repo contains three things:
 
 ## Installation
 
-CommonForms can be installed with either `uv` or `pip`, feel free to choose your package manager flavor:
+CommonForms is a CLI tool with a sizable dependency footprint (`transformers`,
+`torch`, `rfdetr`, `ultralytics`, and friends), so the cleanest install is an
+**isolated** one that creates a dedicated environment and exposes just the
+`commonforms` command:
+
+```sh
+uv tool install commonforms
+# or
+pipx install commonforms
+```
+
+If you'd rather use it as a **library** inside an existing project, install it with
+`uv` or `pip`, feel free to choose your package manager flavor:
 
 ```sh
 uv pip install commonforms
+# or
+pip install commonforms
 ```
+
+> ⚠️ A plain `pip install` (or `uv pip install`) installs into your **active**
+> environment. Because the dependency set is large and pins recent versions, this can
+> upgrade packages like `numpy`, `pillow`, and `transformers` in place — so install
+> into a dedicated virtualenv/conda env, not a shared `base`.
 
 Once it's installed, you should be able to run the CLI command on ~any PDF.
 
