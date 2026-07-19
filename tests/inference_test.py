@@ -5,7 +5,7 @@ import formalpdf
 import pytest
 from PIL import Image
 
-from commonforms.inference import promote_signature_widgets
+from commonforms.inference import FFDNetDetector, promote_signature_widgets
 from commonforms.utils import BoundingBox, Page, TextFragment, Widget
 
 
@@ -69,6 +69,23 @@ def test_inference_ffdetr(tmp_path):
     assert len(doc[0].widgets()) > 0
 
     doc.document.close()
+
+
+def test_ffdnet_enables_class_agnostic_nms():
+    class Model:
+        def predict(self, source, **kwargs):
+            assert len(source) == 1
+            assert kwargs["agnostic_nms"] is True
+            return []
+
+    detector = FFDNetDetector.__new__(FFDNetDetector)
+    detector.device = "cpu"
+    detector.fast = False
+    detector.model = Model()
+
+    pages = [Page(image=Image.new("RGB", (1, 1)), width=1, height=1, text_fragments=[])]
+
+    assert detector.extract_widgets(pages) == {}
 
 
 def test_promote_signature_widgets_uses_signature_label_on_test_pdf():
