@@ -158,6 +158,7 @@ class FFDNetDetector:
                 augment=True,
                 imgsz=image_size,
                 device=self.device,
+                agnostic_nms=True,
             )
 
         widgets = {}
