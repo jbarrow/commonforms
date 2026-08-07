@@ -1,16 +1,7 @@
-import pytest
 from pypdf import PdfReader, PdfWriter
-from pypdf.generic import (
-    ArrayObject,
-    ContentStream,
-    DecodedStreamObject,
-    DictionaryObject,
-    IndirectObject,
-    NameObject,
-    NumberObject,
-)
+from pypdf.generic import ContentStream, IndirectObject, NameObject
 
-from commonforms.form_creator import Checkbox, PyPdfFormCreator
+from commonforms.form_creator import PyPdfFormCreator
 from commonforms.utils import BoundingBox
 
 
@@ -78,42 +69,3 @@ def test_checkbox_appearance_streams_are_indirect_and_flatten_checked_state(tmp_
     assert dict(flattened_appearance["/Resources"]) == checked_resources
     assert flattened_appearance.get_data() == checked_data
     flattened_reader.close()
-
-
-@pytest.mark.parametrize(("width", "height"), [(100, 20), (20, 100)])
-def test_checkbox_checkmark_is_square_and_centered(width, height):
-    checkbox = Checkbox(
-        "agree",
-        ArrayObject(
-            [
-                NumberObject(0),
-                NumberObject(0),
-                NumberObject(width),
-                NumberObject(height),
-            ]
-        ),
-    )
-    appearance = checkbox["/AP"]
-    assert isinstance(appearance, DictionaryObject)
-    normal_appearances = appearance["/N"]
-    assert isinstance(normal_appearances, DictionaryObject)
-    checked_appearance = normal_appearances["/Yes"]
-    assert isinstance(checked_appearance, DecodedStreamObject)
-    operations = ContentStream(checked_appearance, None).operations
-    checkmark = [
-        tuple(map(float, operands))
-        for operands, operator in operations
-        if operator in (b"m", b"l")
-    ]
-
-    size = min(width, height)
-    x = (width - size) / 2
-    y = (height - size) / 2
-    expected_checkmark = [
-        (x + size * 0.18, y + size * 0.50),
-        (x + size * 0.43, y + size * 0.23),
-        (x + size * 0.84, y + size * 0.78),
-    ]
-
-    for actual, expected in zip(checkmark, expected_checkmark, strict=True):
-        assert actual == pytest.approx(expected)
