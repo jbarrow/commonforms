@@ -107,11 +107,17 @@ class Checkbox(AnnotationDictionary):
                 }
             )
             if checked:
+                checkmark_size = min(width, height)
+                checkmark_x = (width - checkmark_size) / 2
+                checkmark_y = (height - checkmark_size) / 2
                 stream.set_data(
-                    f"{border} q 0 0 0 RG {min(width, height) * 0.12:.4f} w "
-                    f"{width * 0.18:.4f} {height * 0.50:.4f} m "
-                    f"{width * 0.43:.4f} {height * 0.23:.4f} l "
-                    f"{width * 0.84:.4f} {height * 0.78:.4f} l S Q".encode()
+                    f"{border} q 0 0 0 RG {checkmark_size * 0.12:.4f} w "
+                    f"{checkmark_x + checkmark_size * 0.18:.4f} "
+                    f"{checkmark_y + checkmark_size * 0.50:.4f} m "
+                    f"{checkmark_x + checkmark_size * 0.43:.4f} "
+                    f"{checkmark_y + checkmark_size * 0.23:.4f} l "
+                    f"{checkmark_x + checkmark_size * 0.84:.4f} "
+                    f"{checkmark_y + checkmark_size * 0.78:.4f} l S Q".encode()
                 )
             else:
                 stream.set_data(border.encode())
