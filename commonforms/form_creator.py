@@ -207,7 +207,15 @@ class PyPdfFormCreator:
         rect = rect_for(bounding_box, self.writer.pages[page])
         checkbox = Checkbox(name=name, rect=rect)
         appearance = checkbox[NameObject("/AP")]
+        if not isinstance(appearance, DictionaryObject):
+            raise TypeError(
+                "Generated checkbox has an invalid /AP appearance dictionary"
+            )
         normal_appearance = appearance[NameObject("/N")]
+        if not isinstance(normal_appearance, DictionaryObject):
+            raise TypeError(
+                "Generated checkbox has an invalid /AP /N appearance dictionary"
+            )
         for state in (NameObject("/Off"), NameObject("/Yes")):
             normal_appearance[state] = self.writer._add_object(normal_appearance[state])
         self.writer.add_annotation(page_number=page, annotation=checkbox)
