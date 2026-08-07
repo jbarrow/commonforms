@@ -1,11 +1,12 @@
-from pypdf import PdfWriter, PdfReader
+from pypdf import PdfReader, PdfWriter
 from pypdf.annotations import AnnotationDictionary
 from pypdf.generic import (
-    NameObject,
     ArrayObject,
+    DecodedStreamObject,
+    DictionaryObject,
+    NameObject,
     NumberObject,
     TextStringObject,
-    DictionaryObject,
 )
 
 from commonforms.utils import BoundingBox
@@ -83,6 +84,38 @@ class Checkbox(AnnotationDictionary):
         super().__init__()
         pdf_value = NameObject("/Off") if not value else NameObject("/Yes")
 
+        width = max(float(rect[2]) - float(rect[0]), 1)
+        height = max(float(rect[3]) - float(rect[1]), 1)
+
+        def appearance(checked: bool) -> DecodedStreamObject:
+            stream = DecodedStreamObject()
+            stream.update(
+                {
+                    NameObject("/Type"): NameObject("/XObject"),
+                    NameObject("/Subtype"): NameObject("/Form"),
+                    NameObject("/BBox"): ArrayObject(
+                        [NumberObject(0), NumberObject(0), NumberObject(width), NumberObject(height)]
+                    ),
+                }
+            )
+            if checked:
+                stream.set_data(
+                    f"q 0 0 0 RG {min(width, height) * 0.12:.4f} w "
+                    f"{width * 0.18:.4f} {height * 0.50:.4f} m "
+                    f"{width * 0.43:.4f} {height * 0.23:.4f} l "
+                    f"{width * 0.84:.4f} {height * 0.78:.4f} l S Q".encode()
+                )
+            else:
+                stream.set_data(b"")
+            return stream
+
+        normal_appearance = DictionaryObject(
+            {
+                NameObject("/Off"): appearance(False),
+                NameObject("/Yes"): appearance(True),
+            }
+        )
+
         self.update(
             {
                 NameObject("/Type"): NameObject("/Annot"),
@@ -93,6 +126,9 @@ class Checkbox(AnnotationDictionary):
                 NameObject("/Rect"): rect,
                 NameObject("/V"): pdf_value,
                 NameObject("/AS"): pdf_value,
+                NameObject("/AP"): DictionaryObject(
+                    {NameObject("/N"): normal_appearance}
+                ),
                 NameObject("/T"): TextStringObject(name),
             }
         )
