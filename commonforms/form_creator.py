@@ -198,6 +198,10 @@ class PyPdfFormCreator:
     def add_checkbox(self, name: str, page: int, bounding_box: BoundingBox) -> None:
         rect = rect_for(bounding_box, self.writer.pages[page])
         checkbox = Checkbox(name=name, rect=rect)
+        appearance = checkbox[NameObject("/AP")])
+        normal_appearance = appearance[NameObject("/N")])
+        for state in (NameObject("/Off"), NameObject("/Yes")):
+            normal_appearance[state] = self.writer._add_object(normal_appearance[state])
         self.writer.add_annotation(page_number=page, annotation=checkbox)
 
     def add_signature(self, name: str, page: int, bounding_box: BoundingBox) -> None:
