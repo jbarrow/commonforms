@@ -26,9 +26,7 @@ def test_checkbox_appearance_streams_are_indirect_and_flatten_checked_state(tmp_
     blank_writer.close()
 
     creator = PyPdfFormCreator(input_path)
-    creator.add_checkbox(
-        "agree", 0, BoundingBox(x0=0.1, y0=0.1, x1=0.2, y1=0.2)
-    )
+    creator.add_checkbox("agree", 0, BoundingBox(x0=0.1, y0=0.1, x1=0.2, y1=0.2))
     creator.save(checkbox_path)
     creator.close()
 
@@ -63,14 +61,16 @@ def test_checkbox_appearance_streams_are_indirect_and_flatten_checked_state(tmp_
 
     flattened_reader = PdfReader(flattened_path)
     flattened_page = flattened_reader.pages[0]
-    operations = ContentStream(flattened_page.get_contents(), flattened_reader).operations
+    operations = ContentStream(
+        flattened_page.get_contents(), flattened_reader
+    ).operations
     do_operations = [operands for operands, operator in operations if operator == b"Do"]
 
     assert len(do_operations) == 1
     xobject_name = do_operations[0][0]
-    flattened_appearance = flattened_page["/Resources"]["/XObject"].raw_get(
-        xobject_name
-    ).get_object()
+    flattened_appearance = (
+        flattened_page["/Resources"]["/XObject"].raw_get(xobject_name).get_object()
+    )
 
     assert flattened_appearance["/Type"] == "/XObject"
     assert flattened_appearance["/Subtype"] == "/Form"

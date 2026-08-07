@@ -101,7 +101,12 @@ class Checkbox(AnnotationDictionary):
                     NameObject("/Type"): NameObject("/XObject"),
                     NameObject("/Subtype"): NameObject("/Form"),
                     NameObject("/BBox"): ArrayObject(
-                        [NumberObject(0), NumberObject(0), NumberObject(width), NumberObject(height)]
+                        [
+                            NumberObject(0),
+                            NumberObject(0),
+                            NumberObject(width),
+                            NumberObject(height),
+                        ]
                     ),
                     NameObject("/Resources"): DictionaryObject(),
                 }
