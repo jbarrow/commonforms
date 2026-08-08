@@ -34,12 +34,13 @@ def test_checkbox_appearance_streams_are_indirect_and_flatten_checked_state(tmp_
         assert appearance["/Subtype"] == "/Form"
         assert "/BBox" in appearance
         assert "/Resources" in appearance
-        assert appearance.get_data()
 
+    assert normal_appearances["/Off"].get_data() == b""
     checked_appearance = normal_appearances["/Yes"]
     checked_bbox = list(checked_appearance["/BBox"])
     checked_resources = dict(checked_appearance["/Resources"])
     checked_data = checked_appearance.get_data()
+    assert checked_data
 
     flatten_writer = PdfWriter(clone_from=checkbox_reader)
     flatten_writer.update_page_form_field_values(

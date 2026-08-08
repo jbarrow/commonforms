@@ -88,13 +88,6 @@ class Checkbox(AnnotationDictionary):
         height = max(float(rect[3]) - float(rect[1]), 1)
 
         def appearance(checked: bool) -> DecodedStreamObject:
-            border_width = min(width, height) * 0.08
-            border_inset = border_width
-            border = (
-                f"q 0 0 0 RG {border_width:.4f} w "
-                f"{border_inset:.4f} {border_inset:.4f} "
-                f"{width - 2 * border_inset:.4f} {height - 2 * border_inset:.4f} re S Q"
-            )
             stream = DecodedStreamObject()
             stream.update(
                 {
@@ -113,13 +106,13 @@ class Checkbox(AnnotationDictionary):
             )
             if checked:
                 stream.set_data(
-                    f"{border} q 0 0 0 RG {min(width, height) * 0.12:.4f} w "
+                    f"q 0 0 0 RG {min(width, height) * 0.12:.4f} w "
                     f"{width * 0.18:.4f} {height * 0.50:.4f} m "
                     f"{width * 0.43:.4f} {height * 0.23:.4f} l "
                     f"{width * 0.84:.4f} {height * 0.78:.4f} l S Q".encode()
                 )
             else:
-                stream.set_data(border.encode())
+                stream.set_data(b"")
             return stream
 
         normal_appearance = DictionaryObject(
