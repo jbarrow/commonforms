@@ -35,7 +35,8 @@ def test_checkbox_appearance_streams_are_indirect_and_flatten_checked_state(tmp_
         assert "/BBox" in appearance
         assert "/Resources" in appearance
 
-    assert normal_appearances["/Off"].get_data() == b""
+    # pypdf versions can preserve insignificant PDF whitespace in empty streams.
+    assert normal_appearances["/Off"].get_data().strip() == b""
     checked_appearance = normal_appearances["/Yes"]
     checked_bbox = list(checked_appearance["/BBox"])
     checked_resources = dict(checked_appearance["/Resources"])
